@@ -88,6 +88,8 @@ def main():
     )
     args = parser.parse_args()
 
+    assert 0 <= args.hour <= 23
+
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
     if args.cal == "solar":
@@ -118,7 +120,7 @@ def main():
 
     # Convert hour to 地支
     with my_open("hour2chishi.txt") as f:
-        hour_chishi = f.read().splitlines()[args.hour % 24]
+        hour_chishi = f.read().splitlines()[args.hour]
 
     # Compute positions of 命宮 and 身宮
     col_diff = luna_month - 1
@@ -366,7 +368,6 @@ def main():
                         print("<" + shikasei.name + ">", end="")
                     elif shikasei.kind == "jika":
                         print("|" + shikasei.name + "|", end="")
-
                 print("　", end="")
             print()
 
