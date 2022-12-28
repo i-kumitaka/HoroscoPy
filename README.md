@@ -24,4 +24,4 @@ Please use this program to check your manual works.
 
 ## License
 
-Apache License 2.0.
+MIT License.
