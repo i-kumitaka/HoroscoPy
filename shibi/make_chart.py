@@ -98,13 +98,14 @@ def main():
         sol2luna = os.path.join("sol2luna", sol_year, sol_month + ".txt")
         with my_open(sol2luna) as f:
             luna_date = f.read().splitlines()[int(sol_day) - 1]
+            bias, luna_month, luna_day = [int(x) for x in luna_date.split(",")]
+            luna_year = int(sol_year) + bias
     elif args.cal == "lunar":
-        luna_date = args.date
+        luna_year, luna_month, luna_day = [int(x) for x in luna_date.split(".")]
     else:
         raise NotImplementedError
 
-    luna_year, luna_month, luna_day = [int(x) for x in luna_date.split(".")]
-    print("・旧暦生年月日：" + luna_date)
+    print("・旧暦生年月日：%04d.%02d.%02d" % (luna_year, luna_month, luna_day))
 
     # Get set of 地支
     chishi_set, num2chishi, chishi2num = get_basic("chishi")
