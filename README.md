@@ -17,8 +17,8 @@ Note that please input date and hour considering time difference.
 
 The notation in the chart is as below:
 ```
-(‰»*) : ¶”Nl‰»
-|‰»*| : ©‰»l‰»
+(åŒ–*) : ç”Ÿå¹´å››åŒ–
+|åŒ–*| : è‡ªåŒ–å››åŒ–
 ```
 
 
