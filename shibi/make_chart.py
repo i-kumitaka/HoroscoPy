@@ -74,14 +74,14 @@ def main():
         "--date", required=True, type=str, help="Date, e.g., 2000.01.01"
     )
     parser.add_argument(
-        "--hour", required=True, type=int, help="Modified hour, e.g., 12"
+        "--hour", required=True, type=int, help="Modified hour, e.g., 21"
     )
     parser.add_argument(
-        "--gender", required=True, type=str, choices=["male", "female"], help="Gender."
+        "--gender", required=True, type=str, help="Gender, e.g., M and F"
     )
     parser.add_argument(
         "--cal",
-        default="lunar",
+        default="solar",
         type=str,
         choices=["solar", "lunar"],
         help="Kind of calender.",
@@ -89,6 +89,12 @@ def main():
     args = parser.parse_args()
 
     assert 0 <= args.hour <= 23
+    if args.gender.startswith(("m", "M")):
+        is_male = True
+    elif args.gender.startswith(("f", "F")):
+        is_male = False
+    else:
+        raise NotImplementedError("Unknown gender")
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
@@ -326,10 +332,7 @@ def main():
     is_yokan = tenkan2num[year_tenkan] % 2 == 0
     is_inkan = not is_yokan
     for i in range(len(miyas)):
-        if i != 0 and (
-            (is_yokan and args.gender == "female")
-            or (is_inkan and args.gender == "male")
-        ):
+        if i != 0 and ((is_yokan and not is_male) or (is_inkan and is_male)):
             idx = len(miyas) - i
         else:
             idx = i
