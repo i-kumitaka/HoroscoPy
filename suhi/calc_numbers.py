@@ -85,7 +85,7 @@ def main():
     print("P: %d" % n_p)
 
     # Calculate realization number.
-    n_r = n_b + n_d
+    n_r = to_single(n_b + n_d)
     print("R: %d" % n_r)
 
 
