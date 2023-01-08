@@ -9,9 +9,9 @@
 
 ### Making purple star astrology chart
 
-A female born on January 1st, 2000 at 9:30 p.m. in the solar calendar:
+A female born on January 30th, 2000 at 9:30 p.m. in the solar calendar:
 ```sh
-python make_chart.py --date 2000.01.01 --hour 21 --gender female --cal solar
+python make_chart.py --date 2000.01.30 --hour 21 --gender female --cal solar
 ```
 Note that please input date and hour considering time difference.
 
