@@ -15,6 +15,12 @@ python make_chart.py --date 2000.01.01 --hour 21 --gender female --cal solar
 ```
 Note that please input date and hour considering time difference.
 
+The notation in the chart is as below:
+```
+(âª*) : ê∂îNélâª
+|âª*| : é©âªélâª
+```
+
 
 ## Disclaimer
 
