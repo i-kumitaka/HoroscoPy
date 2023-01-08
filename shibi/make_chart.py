@@ -98,16 +98,17 @@ def main():
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
+    split_date = args.date.replace("/", ".").split(".")
     if args.cal == "solar":
         # Convert 新暦 to 旧暦
-        sol_year, sol_month, sol_day = args.date.split(".")
+        sol_year, sol_month, sol_day = split_date
         sol2luna = os.path.join("sol2luna", sol_year, sol_month + ".txt")
         with my_open(sol2luna) as f:
             luna_date = f.read().splitlines()[int(sol_day) - 1]
             bias, luna_month, luna_day = [int(x) for x in luna_date.split(",")]
             luna_year = int(sol_year) + bias
     elif args.cal == "lunar":
-        luna_year, luna_month, luna_day = [int(x) for x in luna_date.split(".")]
+        luna_year, luna_month, luna_day = [int(x) for x in split_date]
     else:
         raise NotImplementedError
 
