@@ -300,14 +300,14 @@ def main():
                     break
             assert idx != -1
 
-    # Set hidden 四化
+    # Set 流出四化
     for name, pos in zip(shikasei_names, shikasei_pos):
         for i, miya1 in enumerate(miyas):
             hoshi = pos[tenkan2num[miya1.tenkan]]
             miya2 = miyas[(i + len(miyas) // 2) % len(miyas)]
             idx = search(miya2, hoshi)
             if idx != -1:
-                miya2.hoshi_list[idx].shikasei_list.append(Shika(name, "kakure"))
+                miya2.hoshi_list[idx].shikasei_list.append(Shika(name, "ryushutsu"))
 
     # Set 自化四化
     for name, pos in zip(shikasei_names, shikasei_pos):
@@ -369,7 +369,7 @@ def main():
                 for shikasei in hoshi.shikasei_list:
                     if shikasei.kind == "meikyu":
                         print("(" + shikasei.name + ")", end="")
-                    elif shikasei.kind == "kakure":
+                    elif shikasei.kind == "ryushutsu":
                         print("<" + shikasei.name + ">", end="")
                     elif shikasei.kind == "jika":
                         print("|" + shikasei.name + "|", end="")

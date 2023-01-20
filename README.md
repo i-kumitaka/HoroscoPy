@@ -19,6 +19,7 @@ The notation in the chart is as below:
 ```
 (化*) : 生年四化
 |化*| : 自化四化
+<化*> : 流出四化
 ```
 
 
