@@ -69,7 +69,7 @@ def get_basic(basename):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Make chart")
+    parser = argparse.ArgumentParser(description="Make a chart")
     parser.add_argument(
         "--date", required=True, type=str, help="Date, e.g., 2000.01.01"
     )

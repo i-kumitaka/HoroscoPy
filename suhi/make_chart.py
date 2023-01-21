@@ -33,7 +33,7 @@ def to_single(n):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Calculate numbers")
+    parser = argparse.ArgumentParser(description="Make a chart")
     parser.add_argument(
         "--date", required=True, type=str, help="Date, e.g., 2000.01.01"
     )
