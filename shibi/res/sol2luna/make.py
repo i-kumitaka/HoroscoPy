@@ -25,24 +25,12 @@ import os
 
 
 def main():
-    num_sol_days = {
-        "1": 31,
-        "2": 28,
-        "3": 31,
-        "4": 30,
-        "5": 31,
-        "6": 30,
-        "7": 31,
-        "8": 31,
-        "9": 30,
-        "10": 31,
-        "11": 30,
-        "12": 31,
-    }
-
+    with open(os.path.join("res", "sol_days.txt")) as f:
+        data = f.read().splitlines()
+        num_sol_days = {i: int(x) for i, x in enumerate(data, start=1)}
     assert sum(num_sol_days.values()) == 365
 
-    with open("lunar_calender.txt") as f_in:
+    with open(os.path.join("res", "lunar_calender.txt")) as f_in:
         # 1955/01/01 on lunar calender
         sol_year = 1955
         sol_month = 1
@@ -68,7 +56,7 @@ def main():
                     f_out.write("%+d,%02d,%02d\n" % (y, m, d))
 
                 sol_day += 1
-                if num_sol_days[str(sol_month)] < sol_day:
+                if num_sol_days[sol_month] < sol_day:
                     if sol_month == 2 and not extend:
                         if sol_year % 400 == 0 or (
                             sol_year % 4 == 0 and sol_year % 100 != 0
