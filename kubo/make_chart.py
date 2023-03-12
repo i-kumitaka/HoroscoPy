@@ -79,7 +79,7 @@ def main():
 
     # Check 節入
     with my_open("setsuiri.txt") as f:
-        lines = f.readlines()
+        lines = f.read().splitlines()
         line = lines[(year - 1955) * 12 + (month - 1)]
         setsuiri = datetime.datetime(*[int(x) for x in line.split(",")])
         before_setsuiri = date < setsuiri
@@ -88,10 +88,17 @@ def main():
         risshun = datetime.datetime(*[int(x) for x in line.split(",")])
         before_risshun = date < risshun
 
+    with my_open("ijo_kanshi.txt") as f:
+        ijo_kanshi = f.read().splitlines()
+
     _, num2kanshi, _ = get_basic("kanshi")
     y = year - 1 if before_risshun else year
     year_kanshi = num2kanshi[(y - 1924) % len(num2kanshi)]
-    print("年干支：" + year_kanshi, end="  ")
+    print("年干支：" + year_kanshi, end="")
+    if year_kanshi in ijo_kanshi:
+        print("* ", end="")
+    else:
+        print("  ", end="")
 
     _, num2kyusei, _ = get_basic("kyusei")
     year_kyusei = num2kyusei[8 - (y - 1928) % len(num2kyusei)]
@@ -99,7 +106,11 @@ def main():
 
     m = (12 if month == 1 else month - 1) if before_setsuiri else month
     month_kanshi = num2kanshi[((year - 1928) * 12 - 12 + m) % len(num2kanshi)]
-    print("月干支：" + month_kanshi, end="  ")
+    print("月干支：" + month_kanshi, end="")
+    if month_kanshi in ijo_kanshi:
+        print("* ", end="")
+    else:
+        print("  ", end="")
 
     month_kyusei = num2kyusei[8 - ((year - 1928) * 12 - 7 + m) % len(num2kyusei)]
     print("月命星：" + month_kyusei)
@@ -111,7 +122,11 @@ def main():
         day_kyusei, day_kanshi = f.read().splitlines()[modified_date.day - 1].split(",")
         day_kanshi = num2kanshi[int(day_kanshi)]
         day_kyusei = num2kyusei[int(day_kyusei) - 1]
-    print("日干支：" + day_kanshi, end="  ")
+    print("日干支：" + day_kanshi, end="")
+    if day_kanshi in ijo_kanshi:
+        print("* ", end="")
+    else:
+        print("  ", end="")
     print("日命星：" + day_kyusei, end="  ")
 
     with my_open("kubo.txt") as f:
@@ -131,7 +146,12 @@ def main():
         bias1 = tenkan_set.index(day_kanshi[0]) % 5
         bias2 = 0 if hour == 23 else (hour + 1) // 2
         hour_kanshi = num2kanshi[bias1 * 12 + bias2]
-        print("時干支：" + hour_kanshi)
+        print("時干支：" + hour_kanshi, end="")
+        if hour_kanshi in ijo_kanshi:
+            print("* ", end="")
+        else:
+            print("  ", end="")
+        print()
 
     circles = [Circle(12 if i == 0 else i) for i in range(12)]
     print(" " * len("Private Month |"), end="")
