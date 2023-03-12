@@ -22,6 +22,7 @@
 #
 
 import argparse
+import datetime
 import os
 
 
@@ -41,109 +42,148 @@ def to_single(n):
     return n
 
 
-def is_yokan(tenkan):
-    with open(os.path.join("res", "tenkan.txt"), encoding="utf-8") as f:
-        tenkan_set = f.read().splitlines()
-        index = tenkan_set.index(tenkan)
-        return index % 2 == 0
+def my_open(filename):
+    return open(os.path.join("res", filename), encoding="utf-8")
+
+
+def get_basic(basename):
+    with my_open(os.path.join("basics", basename + ".txt")) as f:
+        names = f.read().splitlines()
+        num2name = {i: names[i] for i in range(len(names))}
+        name2num = {v: k for k, v in num2name.items()}
+        return names, num2name, name2num
 
 
 def main():
     parser = argparse.ArgumentParser(description="Make a chart")
     parser.add_argument(
-        "--nenkanshi", required=False, default=None, type=str, help="年干支, e.g., 甲子"
+        "--date", required=True, type=str, help="Date, e.g., 2000.01.01"
     )
     parser.add_argument(
-        "--gekkanshi", required=False, default=None, type=str, help="月干支, e.g., 甲子"
-    )
-    parser.add_argument(
-        "--nikkanshi", required=False, default=None, type=str, help="日干支, e.g., 甲子"
-    )
-    parser.add_argument(
-        "--year", required=False, default=None, type=int, help="Birth year, e.g., 2000"
-    )
-    parser.add_argument(
-        "--month", required=False, default=None, type=int, help="Birth month, e.g., 11"
+        "--hour", default=None, type=str, help="Modified hour, e.g., 00:00"
     )
     args = parser.parse_args()
 
+    # Modify date
+    year, month, day = [int(x) for x in args.date.replace("/", ".").split(".")]
+    if args.hour is None:
+        hour, minute = 0, 0
+    else:
+        hour, minute = [int(x) for x in args.hour.split(":")]
+    date = datetime.datetime(year, month, day, hour=hour, minute=minute)
+    if date.hour == 23:
+        delta = datetime.timedelta(days=1)
+        modified_date = date + delta
+    else:
+        modified_date = date
+
+    # Check 節入
+    with my_open("setsuiri.txt") as f:
+        lines = f.readlines()
+        line = lines[(year - 1955) * 12 + (month - 1)]
+        setsuiri = datetime.datetime(*[int(x) for x in line.split(",")])
+        before_setsuiri = date < setsuiri
+
+        line = lines[(year - 1955) * 12 + 1]
+        risshun = datetime.datetime(*[int(x) for x in line.split(",")])
+        before_risshun = date < risshun
+
+    _, num2kanshi, _ = get_basic("kanshi")
+    y = year - 1 if before_risshun else year
+    year_kanshi = num2kanshi[(y - 1924) % len(num2kanshi)]
+    print("年干支：" + year_kanshi, end="  ")
+
+    _, num2kyusei, _ = get_basic("kyusei")
+    year_kyusei = num2kyusei[8 - (y - 1928) % len(num2kyusei)]
+    print("本命星：" + year_kyusei)
+
+    m = (12 if month == 1 else month - 1) if before_setsuiri else month
+    month_kanshi = num2kanshi[((year - 1928) * 12 - 12 + m) % len(num2kanshi)]
+    print("月干支：" + month_kanshi, end="  ")
+
+    month_kyusei = num2kyusei[8 - ((year - 1928) * 12 - 7 + m) % len(num2kyusei)]
+    print("月命星：" + month_kyusei)
+
+    sol2kanshi = os.path.join(
+        "sol2kanshi", str(modified_date.year), "%02d" % modified_date.month + ".txt"
+    )
+    with my_open(sol2kanshi) as f:
+        day_kyusei, day_kanshi = f.read().splitlines()[modified_date.day - 1].split(",")
+        day_kanshi = num2kanshi[int(day_kanshi)]
+        day_kyusei = num2kyusei[int(day_kyusei) - 1]
+    print("日干支：" + day_kanshi, end="  ")
+    print("日命星：" + day_kyusei, end="  ")
+
+    with my_open("kubo.txt") as f:
+        kubo = None
+        for line in f:
+            ary = line.rstrip().split(",")
+            if day_kanshi in ary[1:]:
+                kubo = ary[0]
+                break
+        assert kubo is not None
+    print(kubo + "空亡")
+
+    tenkan_set, _, _ = get_basic("tenkan")
+    chishi_set, _, _ = get_basic("chishi")
+
+    if args.hour is not None:
+        bias1 = tenkan_set.index(day_kanshi[0]) % 5
+        bias2 = 0 if hour == 23 else (hour + 1) // 2
+        hour_kanshi = num2kanshi[bias1 * 12 + bias2]
+        print("時干支：" + hour_kanshi)
+
     circles = [Circle(12 if i == 0 else i) for i in range(12)]
-    print("    ", end="")
+    print(" " * len("Private Month |"), end="")
     for circle in circles:
         print("%5d" % circle.num, end="")
     print()
-    print("----", end="")
+    print("-" * len("Private Month |"), end="")
     for _ in circles:
         print("-----", end="")
     print()
 
-    if args.month is not None:
-        assert 1 <= args.month <= 12
+    n = month
+    s = 1
+    for i in range(12):
+        circles[(s + i) % 12].green_month = (n - 1 + i) % 12 + 1
+    print(" Public Month |", end="")
+    for circle in circles:
+        print("%5d" % circle.green_month, end="")
+    print()
 
-        n = args.month
-        s = 1
-        for i in range(12):
-            circles[(s + i) % 12].green_month = (n - 1 + i) % 12 + 1
+    n = to_single(year)
+    s = 1
+    for i in range(12):
+        circles[(s + i) % 12].green_year = to_single(n + i)
+    print("  Public Year |", end="")
+    for circle in circles:
+        print("%5d" % circle.green_year, end="")
+    print()
 
-        print("GM |", end="")
-        for circle in circles:
-            print("%5d" % circle.green_month, end="")
-        print()
+    tenkan = month_kanshi[0]
+    is_yokan = tenkan_set.index(tenkan) % 2 == 0
 
-    if args.year is not None:
-        n = to_single(args.year)
-        s = 1
-        for i in range(12):
-            circles[(s + i) % 12].green_year = to_single(n + i)
+    n = chishi_set.index(kubo[0])
+    s = 1 if is_yokan else 0
+    for i in range(12):
+        circles[(s + i) % 12].white_month = (n + i) % 12 + 1
+    print("Private Month |", end="")
+    for circle in circles:
+        print("%5d" % circle.white_month, end="")
+    print()
 
-        print("GY |", end="")
-        for circle in circles:
-            print("%5d" % circle.green_year, end="")
-        print()
+    tenkan = year_kanshi[0]
+    is_yokan = tenkan_set.index(tenkan) % 2 == 0
 
-    # Get 空亡
-    kubo = None
-    if args.gekkanshi is not None or args.nenkanshi is not None:
-        assert args.nikkanshi is not None
-        with open(os.path.join("res", "kubo.txt"), encoding="utf-8") as f:
-            for line in f:
-                ary = line.rstrip().split(",")
-                if args.nikkanshi in ary[1:]:
-                    kubo = ary[0]
-                    break
-        assert kubo is not None, "%s is wrong" % args.nikkanshi
-
-    if args.gekkanshi is not None:
-        assert len(args.gekkanshi) == 2
-
-        tenkan, _ = list(args.gekkanshi)
-        with open(os.path.join("res", "chishi.txt"), encoding="utf-8") as f:
-            chishi_set = f.read().splitlines()
-            n = chishi_set.index(kubo[0]) + 1
-        s = 1 if is_yokan(tenkan) else 0
-        for i in range(12):
-            circles[(s + i) % 12].white_month = (n - 1 + i) % 12 + 1
-
-        print("WM |", end="")
-        for circle in circles:
-            print("%5d" % circle.white_month, end="")
-        print()
-
-    if args.nenkanshi is not None:
-        assert len(args.nenkanshi) == 2
-
-        tenkan, _ = list(args.nenkanshi)
-        with open(os.path.join("res", "chishi.txt"), encoding="utf-8") as f:
-            chishi_set = f.read().splitlines()
-            n = chishi_set.index(kubo[0])
-        s = 1 if is_yokan(tenkan) else 0
-        for i in range(12):
-            circles[(s + i) % 12].white_year = chishi_set[(n + i) % 12]
-
-        print("WY |", end="")
-        for circle in circles:
-            print("%4s" % circle.white_year, end="")
-        print()
+    n = chishi_set.index(kubo[0])
+    s = 1 if is_yokan else 0
+    for i in range(12):
+        circles[(s + i) % 12].white_year = chishi_set[(n + i) % 12]
+    print(" Private Year |", end="")
+    for circle in circles:
+        print("%4s" % circle.white_year, end="")
+    print()
 
 
 if __name__ == "__main__":

@@ -25,7 +25,6 @@ import argparse
 import io
 import os
 import sys
-import warnings
 
 
 class Shika:
@@ -85,6 +84,9 @@ def main():
         type=str,
         choices=["solar", "lunar"],
         help="Kind of calender.",
+    )
+    parser.add_argument(
+        "--risshun", default=4, type=int, help="Day of new year in February"
     )
     args = parser.parse_args()
 
@@ -178,13 +180,8 @@ def main():
 
     # 甲子 is 六十干支 on 1924
     idx = (luna_year - 1924) % len(rokuju_kanshi_set)
-    if luna_month <= 1:
+    if luna_month == 1 or (luna_month == 2 and luna_day < args.risshun):
         idx -= 1
-    elif luna_month == 2:
-        if luna_day <= 3:
-            idx -= 1
-        if 2 <= luna_day <= 6:
-            warnings.warn("Please make sure your calender.")
 
     year_rokuju_kanshi = rokuju_kanshi_set[idx]
     year_tenkan = year_rokuju_kanshi[0]

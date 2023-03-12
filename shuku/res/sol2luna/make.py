@@ -31,7 +31,7 @@ def main():
     assert sum(num_sol_days.values()) == 365
 
     luna2shuku = {i: {} for i in range(1, 13)}
-    with open(os.path.join("res", "sluna2shuku.txt")) as f:
+    with open(os.path.join("res", "luna2shuku.txt")) as f:
         for line in f:
             month, day, shuku = [int(x) for x in line.rstrip().split(",")]
             luna2shuku[month][day] = shuku
