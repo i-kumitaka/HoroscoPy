@@ -26,15 +26,6 @@ import datetime
 import os
 
 
-class Circle:
-    def __init__(self, num):
-        self.num = num
-        self.green_month = None
-        self.green_year = None
-        self.white_month = None
-        self.white_year = None
-
-
 def to_single(n):
     n = int(n)
     while n >= 10:
@@ -54,6 +45,42 @@ def get_basic(basename):
         return names, num2name, name2num
 
 
+class Circle:
+    def __init__(self, num):
+        self.num = num
+        self.green_month = None
+        self.green_year = None
+        self.white_month = None
+        self.white_year = None
+
+
+class GogyoCount:
+    def __init__(self, tenkan_set, chishi_set):
+        self.tenkan_set = tenkan_set
+        self.chishi_set = chishi_set
+        self.count = [0, 0, 0, 0, 0]
+
+        with my_open("tenkan2gogyo.txt") as f:
+            data = f.read().splitlines()
+            self.tenkan2gogyo = {i: int(data[i]) for i in range(len(data))}
+
+        with my_open("chishi2gogyo.txt") as f:
+            data = f.read().splitlines()
+            self.chishi2gogyo = {i: int(data[i]) for i in range(len(data))}
+
+    def add(self, kanshi):
+        tenkan = kanshi[0]
+        tenkan_gogyo = self.tenkan2gogyo[self.tenkan_set.index(tenkan)]
+        self.count[tenkan_gogyo - 1] += 1
+
+        chishi = kanshi[1]
+        chishi_gogyo = self.chishi2gogyo[self.chishi_set.index(chishi)]
+        self.count[chishi_gogyo - 1] += 1
+
+    def print(self):
+        print(" / ".join([str(x) for x in self.count]))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Make a chart")
     parser.add_argument(
@@ -66,6 +93,9 @@ def main():
 
     # Modify date
     year, month, day = [int(x) for x in args.date.replace("/", ".").split(".")]
+    assert 1955 <= year <= 2030
+    assert 1 <= month <= 12
+    assert 1 <= day <= 31
     if args.hour is None:
         hour, minute = 0, 0
     else:
@@ -88,12 +118,17 @@ def main():
         risshun = datetime.datetime(*[int(x) for x in line.split(",")])
         before_risshun = date < risshun
 
+    tenkan_set, _, _ = get_basic("tenkan")
+    chishi_set, _, _ = get_basic("chishi")
+    gogyo_count = GogyoCount(tenkan_set, chishi_set)
+
     with my_open("ijo_kanshi.txt") as f:
         ijo_kanshi = f.read().splitlines()
 
     _, num2kanshi, _ = get_basic("kanshi")
     y = year - 1 if before_risshun else year
     year_kanshi = num2kanshi[(y - 1924) % len(num2kanshi)]
+    gogyo_count.add(year_kanshi)
     print("年干支：" + year_kanshi, end="")
     if year_kanshi in ijo_kanshi:
         print("* ", end="")
@@ -106,6 +141,7 @@ def main():
 
     m = (12 if month == 1 else month - 1) if before_setsuiri else month
     month_kanshi = num2kanshi[((year - 1928) * 12 - 12 + m) % len(num2kanshi)]
+    gogyo_count.add(month_kanshi)
     print("月干支：" + month_kanshi, end="")
     if month_kanshi in ijo_kanshi:
         print("* ", end="")
@@ -122,6 +158,7 @@ def main():
         day_kyusei, day_kanshi = f.read().splitlines()[modified_date.day - 1].split(",")
         day_kanshi = num2kanshi[int(day_kanshi)]
         day_kyusei = num2kyusei[int(day_kyusei) - 1]
+    gogyo_count.add(day_kanshi)
     print("日干支：" + day_kanshi, end="")
     if day_kanshi in ijo_kanshi:
         print("* ", end="")
@@ -139,19 +176,20 @@ def main():
         assert kubo is not None
     print(kubo + "空亡")
 
-    tenkan_set, _, _ = get_basic("tenkan")
-    chishi_set, _, _ = get_basic("chishi")
-
     if args.hour is not None:
         bias1 = tenkan_set.index(day_kanshi[0]) % 5
         bias2 = 0 if hour == 23 else (hour + 1) // 2
         hour_kanshi = num2kanshi[bias1 * 12 + bias2]
+        gogyo_count.add(hour_kanshi)
         print("時干支：" + hour_kanshi, end="")
         if hour_kanshi in ijo_kanshi:
             print("* ", end="")
         else:
             print("  ", end="")
         print()
+
+    print("五行数：", end="")
+    gogyo_count.print()
 
     circles = [Circle(12 if i == 0 else i) for i in range(12)]
     print(" " * len("Private Month |"), end="")
