@@ -85,9 +85,6 @@ def main():
         choices=["solar", "lunar"],
         help="Kind of calender.",
     )
-    parser.add_argument(
-        "--risshun", default=4, type=int, help="Day of new year in February"
-    )
     args = parser.parse_args()
 
     assert 0 <= args.hour <= 23
@@ -180,9 +177,6 @@ def main():
 
     # 甲子 is 六十干支 on 1924
     idx = (luna_year - 1924) % len(rokuju_kanshi_set)
-    if luna_month == 1 or (luna_month == 2 and luna_day < args.risshun):
-        idx -= 1
-
     year_rokuju_kanshi = rokuju_kanshi_set[idx]
     year_tenkan = year_rokuju_kanshi[0]
     year_chishi = year_rokuju_kanshi[1]
