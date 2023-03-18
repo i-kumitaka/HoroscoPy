@@ -22,6 +22,7 @@
 #
 
 import argparse
+import datetime
 import io
 import os
 import sys
@@ -78,13 +79,6 @@ def main():
     parser.add_argument(
         "--gender", required=True, type=str, help="Gender, e.g., M and F"
     )
-    parser.add_argument(
-        "--cal",
-        default="solar",
-        type=str,
-        choices=["solar", "lunar"],
-        help="Kind of calender.",
-    )
     args = parser.parse_args()
 
     assert 0 <= args.hour <= 23
@@ -97,19 +91,19 @@ def main():
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
-    split_date = args.date.replace("/", ".").split(".")
-    if args.cal == "solar":
-        # Convert 新暦 to 旧暦
-        sol_year, sol_month, sol_day = split_date
-        sol2luna = os.path.join("sol2luna", sol_year, sol_month + ".txt")
-        with my_open(sol2luna) as f:
-            luna_date = f.read().splitlines()[int(sol_day) - 1]
-            bias, luna_month, luna_day = [int(x) for x in luna_date.split(",")]
-            luna_year = int(sol_year) + bias
-    elif args.cal == "lunar":
-        luna_year, luna_month, luna_day = [int(x) for x in split_date]
-    else:
-        raise NotImplementedError
+    # Convert 新暦 to 旧暦
+    sol_year, sol_month, sol_day = [
+        int(x) for x in args.date.replace("/", ".").split(".")
+    ]
+    if args.hour == 23:
+        date = datetime.datetime(sol_year, sol_month, sol_day)
+        date += datetime.timedelta(1)
+        sol_year, sol_month, sol_day = date.year, date.month, date.day
+    sol2luna = os.path.join("sol2luna", str(sol_year), "%02d" % sol_month + ".txt")
+    with my_open(sol2luna) as f:
+        luna_date = f.read().splitlines()[int(sol_day) - 1]
+        bias, luna_month, luna_day = [int(x) for x in luna_date.split(",")]
+        luna_year = int(sol_year) + bias
 
     print("・旧暦生年月日：%04d.%02d.%02d" % (luna_year, luna_month, luna_day))
 
