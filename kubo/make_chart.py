@@ -191,6 +191,23 @@ def main():
     print("五行数：", end="")
     gogyo_count.print()
 
+    with my_open("num2balance.txt") as f:
+        data = f.read().splitlines()
+        num2balance = {i: x for i, x in enumerate(data, start=1)}
+        balance1 = []
+        balance2 = []
+        b1, b2 = num2balance[to_single(year)].split(",")
+        balance1.append(b1)
+        balance2.append(b2)
+        b1, b2 = num2balance[to_single(month)].split(",")
+        balance1.append(b1)
+        balance2.append(b2)
+        b1, b2 = num2balance[to_single(day)].split(",")
+        balance1.append(b1)
+        balance2.append(b2)
+        print("陰中陽：" + " / ".join(balance1))
+        print("＋Ｎ－：" + " / ".join(balance2))
+
     circles = [Circle(12 if i == 0 else i) for i in range(12)]
     print(" " * len("Private Month |"), end="")
     for circle in circles:
