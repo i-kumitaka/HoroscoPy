@@ -74,7 +74,7 @@ def main():
         "--date", required=True, type=str, help="Date, e.g., 2000.01.01"
     )
     parser.add_argument(
-        "--hour", required=True, type=int, help="Modified hour, e.g., 21"
+        "--hour", required=True, type=str, help="Modified hour, e.g., 21"
     )
     parser.add_argument(
         "--gender", required=True, type=str, help="Gender, e.g., M and F"
@@ -82,8 +82,10 @@ def main():
     parser.add_argument("--rotate", default=1, type=int, help="Rotation index [1, 12]")
     args = parser.parse_args()
 
+    hour = int(args.hour.split(":")[0])
+    assert 0 <= hour <= 23
     assert 1 <= args.rotate <= 12
-    assert 0 <= args.hour <= 23
+
     if args.gender.startswith(("m", "M")):
         is_male = True
     elif args.gender.startswith(("f", "F")):
@@ -97,7 +99,7 @@ def main():
     sol_year, sol_month, sol_day = [
         int(x) for x in args.date.replace("/", ".").split(".")
     ]
-    if args.hour == 23:
+    if hour == 23:
         date = datetime.datetime(sol_year, sol_month, sol_day)
         date += datetime.timedelta(1)
         sol_year, sol_month, sol_day = date.year, date.month, date.day
@@ -125,7 +127,7 @@ def main():
 
     # Convert hour to 地支
     with my_open("hour2chishi.txt") as f:
-        hour_chishi = f.read().splitlines()[args.hour]
+        hour_chishi = f.read().splitlines()[hour]
 
     # Compute positions of 命宮 and 身宮
     col_diff = luna_month - 1
