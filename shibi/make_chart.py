@@ -79,15 +79,17 @@ def main():
     parser.add_argument(
         "--gender", required=True, type=str, help="Gender, e.g., M and F"
     )
+    parser.add_argument("--rotate", default=1, type=int, help="Rotation index [1, 12]")
     args = parser.parse_args()
 
+    assert 1 <= args.rotate <= 12
     assert 0 <= args.hour <= 23
     if args.gender.startswith(("m", "M")):
         is_male = True
     elif args.gender.startswith(("f", "F")):
         is_male = False
     else:
-        raise NotImplementedError("Unknown gender")
+        raise ValueError("Unknown gender")
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
@@ -105,6 +107,8 @@ def main():
         bias, luna_month, luna_day = [int(x) for x in luna_date.split(",")]
         luna_year = int(sol_year) + bias
 
+    old = datetime.datetime.now().year - luna_year + 1
+    print("・数え年：%d歳" % old)
     print("・旧暦生年月日：%04d.%02d.%02d" % (luna_year, luna_month, luna_day))
 
     # Get set of 地支
@@ -174,6 +178,7 @@ def main():
     year_rokuju_kanshi = rokuju_kanshi_set[idx]
     year_tenkan = year_rokuju_kanshi[0]
     year_chishi = year_rokuju_kanshi[1]
+    print("・干支：" + year_rokuju_kanshi)
 
     with my_open("nenkan2torakan.txt") as f:
         tenkan_at_tora = f.read().splitlines()[tenkan2num[year_tenkan]]
@@ -335,6 +340,9 @@ def main():
         tc = miyas[i].tenkan + miyas[i].chishi
         print("・%02d　%s／" % (i + 1, tc), end="")
         print(miyas[i].name, end="")
+        if args.rotate != 1:
+            m = miyas[(i + 13 - args.rotate) % len(miyas)].name
+            print("（%s）" % m, end="")
         if miyas[i].is_shinkyu:
             print("　身宮", end="")
         if miyas[i].is_raiinkyu:
