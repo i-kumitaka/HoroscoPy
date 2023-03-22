@@ -135,7 +135,7 @@ def main():
     else:
         print("  ", end="")
 
-    _, num2kyusei, _ = get_basic("kyusei")
+    _, num2kyusei, kyusei2num = get_basic("kyusei")
     year_kyusei = num2kyusei[8 - (y - 1928) % len(num2kyusei)]
     print("本命星：" + year_kyusei)
 
@@ -187,6 +187,24 @@ def main():
         else:
             print("  ", end="")
         print()
+
+    if year_kyusei == month_kyusei:
+        with my_open("chugu_keisha.txt") as f:
+            keisha_set = f.read().splitlines()
+        num = kyusei2num[year_kyusei]
+        keisha = keisha_set[num]
+        print("傾斜宮：中宮（" + keisha + "宮）")
+    else:
+        with my_open("keisha.txt") as f:
+            keisha_set = f.read().splitlines()
+        num1 = kyusei2num[year_kyusei]
+        num2 = kyusei2num[month_kyusei]
+        if num2 > num1:
+            idx = num2 - num1 - 1
+        else:
+            idx = num2 - num1 + len(keisha_set)
+        keisha = keisha_set[idx]
+        print("傾斜宮：" + keisha + "宮")
 
     print("五行数：", end="")
     gogyo_count.print()
