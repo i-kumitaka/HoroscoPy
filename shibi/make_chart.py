@@ -73,18 +73,61 @@ def main():
     parser.add_argument(
         "--date", required=True, type=str, help="Date, e.g., 2000.01.01"
     )
+    parser.add_argument("--time", required=True, type=str, help="Time, e.g., 21:00")
+    parser.add_argument("--place", default=None, type=str, help="Place")
+    parser.add_argument("--gender", required=True, type=str, help="Gender, M or F")
+    parser.add_argument("--base", default=1, type=int, help="Base index [1, 12]")
     parser.add_argument(
-        "--hour", required=True, type=str, help="Modified hour, e.g., 21"
+        "--eot", action="store_true", help="If true, use equation of time"
     )
-    parser.add_argument(
-        "--gender", required=True, type=str, help="Gender, e.g., M and F"
-    )
-    parser.add_argument("--rotate", default=1, type=int, help="Rotation index [1, 12]")
     args = parser.parse_args()
 
-    hour = int(args.hour.split(":")[0])
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+
+    sol_year, sol_month, sol_day = [
+        int(x) for x in args.date.replace("/", ".").split(".")
+    ]
+
+    split_time = [int(x) for x in args.time.split(":")]
+    if len(split_time) == 1:
+        hour = split_time[0]
+        minute = 0
+    elif len(split_time) == 2:
+        hour = split_time[0]
+        minute = split_time[1]
+    else:
+        raise ValueError("Unexpected time")
     assert 0 <= hour <= 23
-    assert 1 <= args.rotate <= 12
+    assert 0 <= minute <= 59
+
+    date = datetime.datetime(sol_year, sol_month, sol_day, hour, minute)
+
+    # Take into account 地方時差
+    if args.place is not None:
+        find = False
+        with my_open("longitude.txt") as f:
+            for line in f:
+                if line.startswith(args.place):
+                    longitude = float(line.split(",")[2])
+                    find = True
+                    break
+        if find:
+            diff = (longitude - 135) * 4
+            date += datetime.timedelta(minutes=diff)
+            print("・時差：%+d分" % round(diff))
+        else:
+            print("・時差：??分")
+
+    # Take into account 均時差
+    if args.eot:
+        with my_open(os.path.join("equation", "%02d.txt" % sol_month)) as f:
+            diff = -int(f.read().splitlines()[int(sol_day) - 1])
+            date += datetime.timedelta(minutes=diff)
+            print("・均時差：%+d分" % diff)
+
+    # This is the next day.
+    if date.hour == 23:
+        date += datetime.timedelta(day=1)
 
     if args.gender.startswith(("m", "M")):
         is_male = True
@@ -93,22 +136,15 @@ def main():
     else:
         raise ValueError("Unknown gender")
 
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-
     # Convert 新暦 to 旧暦
-    sol_year, sol_month, sol_day = [
-        int(x) for x in args.date.replace("/", ".").split(".")
-    ]
-    if hour == 23:
-        date = datetime.datetime(sol_year, sol_month, sol_day)
-        date += datetime.timedelta(1)
-        sol_year, sol_month, sol_day = date.year, date.month, date.day
-    sol2luna = os.path.join("sol2luna", str(sol_year), "%02d" % sol_month + ".txt")
+    sol_year, sol_month, sol_day = date.year, date.month, date.day
+    sol2luna = os.path.join("sol2luna", str(sol_year), "%02d.txt" % sol_month)
     with my_open(sol2luna) as f:
         luna_date = f.read().splitlines()[int(sol_day) - 1]
         bias, luna_month, luna_day = [int(x) for x in luna_date.split(",")]
         luna_year = int(sol_year) + bias
 
+    # Compute current old
     old = datetime.datetime.now().year - luna_year + 1
     print("・数え年：%d歳" % old)
     print("・旧暦生年月日：%04d.%02d.%02d" % (luna_year, luna_month, luna_day))
@@ -127,7 +163,7 @@ def main():
 
     # Convert hour to 地支
     with my_open("hour2chishi.txt") as f:
-        hour_chishi = f.read().splitlines()[hour]
+        hour_chishi = f.read().splitlines()[date.hour]
 
     # Compute positions of 命宮 and 身宮
     col_diff = luna_month - 1
@@ -342,8 +378,8 @@ def main():
         tc = miyas[i].tenkan + miyas[i].chishi
         print("・%02d　%s／" % (i + 1, tc), end="")
         print(miyas[i].name, end="")
-        if args.rotate != 1:
-            m = miyas[(i + 13 - args.rotate) % len(miyas)].name
+        if args.base != 1:
+            m = miyas[(i + 13 - args.base) % len(miyas)].name
             print("（%s）" % m, end="")
         if miyas[i].is_shinkyu:
             print("　身宮", end="")
