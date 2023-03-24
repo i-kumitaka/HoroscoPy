@@ -87,7 +87,7 @@ def main():
         "--date", required=True, type=str, help="Date, e.g., 2000.01.01"
     )
     parser.add_argument(
-        "--hour", default=None, type=str, help="Modified hour, e.g., 00:00"
+        "--time", default=None, type=str, help="Modified time, e.g., 00:00"
     )
     args = parser.parse_args()
 
@@ -96,10 +96,10 @@ def main():
     assert 1955 <= year <= 2030
     assert 1 <= month <= 12
     assert 1 <= day <= 31
-    if args.hour is None:
+    if args.time is None:
         hour, minute = 0, 0
     else:
-        hour, minute = [int(x) for x in args.hour.split(":")]
+        hour, minute = [int(x) for x in args.time.split(":")]
     date = datetime.datetime(year, month, day, hour=hour, minute=minute)
     if date.hour == 23:
         delta = datetime.timedelta(days=1)
@@ -176,7 +176,7 @@ def main():
         assert kubo is not None
     print(kubo + "空亡")
 
-    if args.hour is not None:
+    if args.time is not None:
         bias1 = tenkan_set.index(day_kanshi[0]) % 5
         bias2 = 0 if hour == 23 else (hour + 1) // 2
         hour_kanshi = num2kanshi[bias1 * 12 + bias2]
