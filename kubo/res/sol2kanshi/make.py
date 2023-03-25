@@ -42,7 +42,7 @@ def main():
     kyusei = 3
     is_inton = True
 
-    for y in range(1955, 2031):
+    for y in range(1955, 2068):
         os.makedirs(str(y), exist_ok=True)
         for m in range(1, 13):
             f_out = open(os.path.join(str(y), "%02d.txt" % m), mode="w")

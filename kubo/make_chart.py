@@ -93,7 +93,7 @@ def main():
 
     # Modify date
     year, month, day = [int(x) for x in args.date.replace("/", ".").split(".")]
-    assert 1955 <= year <= 2030
+    assert 1955 <= year <= 2067
     assert 1 <= month <= 12
     assert 1 <= day <= 31
     if args.time is None:
