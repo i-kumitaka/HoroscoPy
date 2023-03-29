@@ -148,6 +148,7 @@ def main():
     old = datetime.datetime.now().year - luna_year + 1
     print("・数え年：%d歳" % old)
     print("・旧暦生年月日：%04d.%02d.%02d" % (luna_year, luna_month, luna_day))
+    print("・修正時間：%02d:%02d" % (date.hour, date.minute))
 
     # Get set of 地支
     chishi_set, num2chishi, chishi2num = get_basic("chishi")
@@ -164,6 +165,7 @@ def main():
     # Convert hour to 地支
     with my_open("hour2chishi.txt") as f:
         hour_chishi = f.read().splitlines()[date.hour]
+    print("・生時支：" + hour_chishi)
 
     # Compute positions of 命宮 and 身宮
     col_diff = luna_month - 1
