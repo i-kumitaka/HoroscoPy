@@ -56,11 +56,11 @@ def main():
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
     # Get 宿
-    split_date = args.date.replace("/", ".").split(".")
+    split_date = [int(x) for x in args.date.replace("/", ".").split(".")]
     sol_year, sol_month, sol_day = split_date
-    sol2luna = os.path.join("sol2luna", sol_year, sol_month + ".txt")
+    sol2luna = os.path.join("sol2luna", str(sol_year), "%02d.txt" % sol_month)
     with my_open(sol2luna) as f:
-        data = f.read().splitlines()[int(sol_day) - 1]
+        data = f.read().splitlines()[sol_day - 1]
         your_shuku = data.rsplit(",", 1)[1]
 
     _, num2shuku, _ = get_basic("shuku")

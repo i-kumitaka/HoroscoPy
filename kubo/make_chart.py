@@ -152,7 +152,7 @@ def main():
     print("月命星：" + month_kyusei)
 
     sol2kanshi = os.path.join(
-        "sol2kanshi", str(modified_date.year), "%02d" % modified_date.month + ".txt"
+        "sol2kanshi", str(modified_date.year), "%02d.txt" % modified_date.month
     )
     with my_open(sol2kanshi) as f:
         day_kyusei, day_kanshi = f.read().splitlines()[modified_date.day - 1].split(",")
