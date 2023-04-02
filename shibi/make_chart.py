@@ -147,6 +147,9 @@ def main():
     # Compute current old
     old = datetime.datetime.now().year - luna_year + 1
     print("・数え年：%d歳" % old)
+
+    weekday = date.strftime("%a")
+    print("・新暦生年月日：%04d.%02d.%02d (%s)" % (sol_year, sol_month, sol_day, weekday))
     print("・旧暦生年月日：%04d.%02d.%02d" % (luna_year, luna_month, luna_day))
     print("・修正時間：%02d:%02d" % (date.hour, date.minute))
 
