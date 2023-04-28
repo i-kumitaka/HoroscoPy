@@ -100,6 +100,9 @@ def main():
     assert 0 <= hour <= 23
     assert 0 <= minute <= 59
 
+    now = datetime.datetime.now()
+    print("・鑑定日：%04d.%02d.%02d" % (now.year, now.month, now.day))
+
     date = datetime.datetime(sol_year, sol_month, sol_day, hour, minute)
 
     # Take into account 地方時差
@@ -145,7 +148,7 @@ def main():
         luna_year = int(sol_year) + bias
 
     # Compute current old
-    old = datetime.datetime.now().year - luna_year + 1
+    old = now.year - luna_year + 1
     print("・数え年：%d歳" % old)
 
     weekday = date.strftime("%a")
