@@ -162,9 +162,8 @@ def main():
     def add_chishi(chishi, val):
         n = chishi2num[chishi] + int(val)
         size = len(chishi2num)
-        if n >= size:
-            n -= size
-        elif n <= -1:
+        n %= size
+        if n <= -1:
             n += size
         return num2chishi[str(n)]
 
@@ -380,6 +379,13 @@ def main():
     # Compute 子年斗君
     nedoshitokun = add_chishi(hour_chishi, 1 - luna_month)
     print("・子年斗君：" + nedoshitokun)
+
+    # Compute 小限
+    with my_open("shogen.txt") as f:
+        base_chishi = f.read().splitlines()[chishi2num[year_chishi]]
+        diff = old - 1 if is_male else 1 - old
+        shogen = add_chishi(base_chishi, diff)
+        print("・小限：" + shogen)
 
     print()
     for i in range(len(miyas)):
