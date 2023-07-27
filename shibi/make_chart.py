@@ -22,8 +22,10 @@
 #
 
 import argparse
+import calendar
 import datetime
 import io
+import math
 import os
 import sys
 
@@ -74,20 +76,27 @@ def main():
         "--date", required=True, type=str, help="Date, e.g., 2000.01.01"
     )
     parser.add_argument("--time", required=True, type=str, help="Time, e.g., 21:00")
-    parser.add_argument("--place", default=None, type=str, help="Place")
     parser.add_argument("--gender", required=True, type=str, help="Gender, M or F")
-    parser.add_argument("--base", default=1, type=int, help="Base index [1, 12]")
+    parser.add_argument("--place", default=None, type=str, help="Place")
     parser.add_argument(
-        "--eot", action="store_true", help="If true, use equation of time"
+        "--eot",
+        choices=["zero", "smart", "cie", "table"],
+        default="smart",
+        type=str,
+        help="Method to compute equation of time",
     )
+    parser.add_argument("--base", default=1, type=int, help="Base index [1, 12]")
+
     args = parser.parse_args()
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
+    # Parse Y/m/d
     sol_year, sol_month, sol_day = [
         int(x) for x in args.date.replace("/", ".").split(".")
     ]
 
+    # Parse H:M
     split_time = [int(x) for x in args.time.split(":")]
     if len(split_time) == 1:
         hour = split_time[0]
@@ -100,37 +109,9 @@ def main():
     assert 0 <= hour <= 23
     assert 0 <= minute <= 59
 
+    date = datetime.datetime(sol_year, sol_month, sol_day, hour, minute)
     now = datetime.datetime.now()
     print("・鑑定日：%04d.%02d.%02d" % (now.year, now.month, now.day))
-
-    date = datetime.datetime(sol_year, sol_month, sol_day, hour, minute)
-
-    # Take into account 地方時差
-    if args.place is not None:
-        find = False
-        with my_open("longitude.txt") as f:
-            for line in f:
-                if line.startswith(args.place):
-                    longitude = float(line.split(",")[2])
-                    find = True
-                    break
-        if find:
-            diff = (longitude - 135) * 4
-            date += datetime.timedelta(minutes=diff)
-            print("・時差：%+d分" % round(diff))
-        else:
-            print("・時差：??分")
-
-    # Take into account 均時差
-    if args.eot:
-        with my_open(os.path.join("equation", "%02d.txt" % sol_month)) as f:
-            diff = -int(f.read().splitlines()[int(sol_day) - 1])
-            date += datetime.timedelta(minutes=diff)
-            print("・均時差：%+d分" % diff)
-
-    # This is the next day.
-    if date.hour == 23:
-        date += datetime.timedelta(day=1)
 
     if args.gender.startswith(("m", "M")):
         is_male = True
@@ -138,6 +119,100 @@ def main():
         is_male = False
     else:
         raise ValueError("Unknown gender")
+
+    # Take into account 地方時差
+    if args.place is None:
+        print("・時差：--分")
+    else:
+        # Get east longitude
+        if args.place.isdigit():
+            longitude = float(args.place)
+        else:
+            with my_open("longitude.txt") as f:
+                for line in f:
+                    if line.startswith(args.place):
+                        ary = line.split(",")
+                        longitude = float(ary[2])
+                        break
+        diff = (longitude - 135) * 4
+        date += datetime.timedelta(minutes=diff)
+        print("・時差：%+d分（東経：%.3f）" % (round(diff), longitude))
+
+    # Take into account 均時差
+    if args.eot is None or args.eot == "zero":
+        print("・均時差：--分")
+    else:
+        if args.eot == "smart":
+            # Calculate Julian Date
+            def calc_jd(y, m, d):
+                if m <= 2:
+                    y -= 1
+                    m += 12
+                jd = (
+                    int(365.25 * y)
+                    + (y // 400)
+                    - (y // 100)
+                    + int(30.59 * (m - 2))
+                    + d
+                    + 1721088.5
+                )
+                return jd
+
+            # https://www.astrogreg.com/snippets/equationoftime-simple.html
+            J1 = calc_jd(sol_year, sol_month, sol_day)
+            J2 = calc_jd(2000, 1, 1)
+            T1 = (J1 - J2) / 36525
+            T2 = T1 * T1
+            T3 = T2 * T1
+            rad = math.pi / 180
+            eps = (
+                23.452294 - 0.0130125 * T1 - 0.00000164 * T2 + 0.000000503 * T3
+            ) * rad
+            y = math.tan(eps / 2) ** 2
+            p = 2 * math.pi
+            L = (279.69668 + 36000.76892 * T1 + 0.0003025 * T2) * rad % p
+            e = 0.01675104 - 0.0000418 * T1 - 0.000000126 * T2
+            M = (
+                (358.47583 + 35999.04975 * T1 - 0.000150 * T2 - 0.0000033 * T3)
+                * rad
+                % p
+            )
+            E = (
+                y * math.sin(2 * L)
+                - 2 * e * math.sin(M)
+                + 4 * e * y * math.sin(M) * math.cos(2 * L)
+                - 0.5 * y * y * math.sin(4 * L)
+                - 1.25 * e * e * math.sin(2 * M)
+            )
+            diff = -E / rad / 15 * 60
+        elif args.eot == "cie":
+            # http://sigbox.web.fc2.com/calc/calc2.html
+            D1 = datetime.datetime(sol_year, 1, 1)
+            D2 = datetime.datetime(sol_year, sol_month, sol_day)
+            N = 366 if calendar.isleap(sol_year) else 365
+            w = 2 * math.pi / N
+            J = (D2 - D1).days + 0.5
+            wJ = w * J
+            theta = (
+                0.0072 * math.cos(1 * wJ)
+                - 0.0528 * math.cos(2 * wJ)
+                - 0.0012 * math.cos(3 * wJ)
+                - 0.1229 * math.sin(1 * wJ)
+                - 0.1565 * math.sin(2 * wJ)
+                - 0.0041 * math.sin(3 * wJ)
+            )
+            diff = -60 * theta
+        elif args.eot == "table":
+            with my_open(os.path.join("equation", "%02d.txt" % sol_month)) as f:
+                diff = -int(f.read().splitlines()[int(sol_day) - 1])
+        else:
+            raise ValueError("Unknown EOT type")
+        date += datetime.timedelta(minutes=diff)
+        print("・均時差：%+d分" % round(diff))
+
+    # This is the next day
+    if date.hour == 23:
+        date += datetime.timedelta(day=1)
 
     # Convert 新暦 to 旧暦
     sol_year, sol_month, sol_day = date.year, date.month, date.day
