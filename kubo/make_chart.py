@@ -48,6 +48,7 @@ def get_basic(basename):
 class Circle:
     def __init__(self, num):
         self.num = num
+        self.green_day = None
         self.green_month = None
         self.green_year = None
         self.white_month = None
@@ -122,18 +123,25 @@ def main():
     chishi_set, _, _ = get_basic("chishi")
     gogyo_count = GogyoCount(tenkan_set, chishi_set)
 
+    with my_open("sango_kanshi.txt") as f:
+        sango_kanshi = f.read().splitlines()
     with my_open("ijo_kanshi.txt") as f:
         ijo_kanshi = f.read().splitlines()
+
+    def check_seijo_kanshi(kanshi):
+        if kanshi in sango_kanshi:
+            print("# ", end="")
+        elif kanshi in ijo_kanshi:
+            print("* ", end="")
+        else:
+            print("  ", end="")
 
     _, num2kanshi, _ = get_basic("kanshi")
     y = year - 1 if before_risshun else year
     year_kanshi = num2kanshi[(y - 1924) % len(num2kanshi)]
     gogyo_count.add(year_kanshi)
     print("年干支：" + year_kanshi, end="")
-    if year_kanshi in ijo_kanshi:
-        print("* ", end="")
-    else:
-        print("  ", end="")
+    check_seijo_kanshi(year_kanshi)
 
     _, num2kyusei, kyusei2num = get_basic("kyusei")
     year_kyusei = num2kyusei[8 - (y - 1928) % len(num2kyusei)]
@@ -143,10 +151,7 @@ def main():
     month_kanshi = num2kanshi[((year - 1928) * 12 - 12 + m) % len(num2kanshi)]
     gogyo_count.add(month_kanshi)
     print("月干支：" + month_kanshi, end="")
-    if month_kanshi in ijo_kanshi:
-        print("* ", end="")
-    else:
-        print("  ", end="")
+    check_seijo_kanshi(month_kanshi)
 
     month_kyusei = num2kyusei[8 - ((year - 1928) * 12 - 7 + m) % len(num2kyusei)]
     print("月命星：" + month_kyusei)
@@ -160,10 +165,7 @@ def main():
         day_kyusei = num2kyusei[int(day_kyusei) - 1]
     gogyo_count.add(day_kanshi)
     print("日干支：" + day_kanshi, end="")
-    if day_kanshi in ijo_kanshi:
-        print("* ", end="")
-    else:
-        print("  ", end="")
+    check_seijo_kanshi(day_kanshi)
     print("日命星：" + day_kyusei, end="  ")
 
     with my_open("kubo.txt") as f:
@@ -182,10 +184,7 @@ def main():
         hour_kanshi = num2kanshi[bias1 * 12 + bias2]
         gogyo_count.add(hour_kanshi)
         print("時干支：" + hour_kanshi, end="")
-        if hour_kanshi in ijo_kanshi:
-            print("* ", end="")
-        else:
-            print("  ", end="")
+        check_seijo_kanshi(hour_kanshi)
         print()
 
     if year_kyusei == month_kyusei:
@@ -243,6 +242,15 @@ def main():
     print(" Public Month |", end="")
     for circle in circles:
         print("%5d" % circle.green_month, end="")
+    print()
+
+    n = to_single(day)
+    s = 1
+    for i in range(12):
+        circles[(s + i) % 12].green_day = to_single(n + i)
+    print("   Public Day |", end="")
+    for circle in circles:
+        print("%5d" % circle.green_day, end="")
     print()
 
     n = to_single(year)
