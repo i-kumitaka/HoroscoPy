@@ -99,8 +99,10 @@ def main():
     assert 1 <= day <= 31
     if args.time is None:
         hour, minute = 0, 0
-    else:
+    elif ":" in args.time:
         hour, minute = [int(x) for x in args.time.split(":")]
+    else:
+        hour, minute = int(args.time), 0
     date = datetime.datetime(year, month, day, hour=hour, minute=minute)
     if date.hour == 23:
         delta = datetime.timedelta(days=1)

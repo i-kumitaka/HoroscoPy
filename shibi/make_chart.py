@@ -38,10 +38,10 @@ class Shika:
 
 
 class Hoshi:
-    def __init__(self, name, is_shusei):
+    def __init__(self, name, level):
         assert name is not None and name
         self.name = name
-        self.is_shusei = is_shusei
+        self.level = int(level)
         self.shikasei_list = []
 
 
@@ -86,7 +86,7 @@ def main():
         help="Method to compute equation of time",
     )
     parser.add_argument("--base", default=1, type=int, help="Base index [1, 12]")
-
+    parser.add_argument("--level", default=0, type=int, help="Print level")
     args = parser.parse_args()
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
@@ -341,57 +341,94 @@ def main():
             if shusei_set[i]:
                 j = (idx + i) % len(miyas)
                 for name in shusei_set[i].split("+"):
-                    miyas[j].hoshi_list.append(Hoshi(name, True))
+                    miyas[j].hoshi_list.append(Hoshi(name, 1))
 
     # Set 月系星
     with my_open(os.path.join("positions", "gekkeisei.txt")) as f:
         for line in f:
             ary = line.rstrip().split(",")
             name = ary[0]
-            chishi = ary[luna_month - 1 + 1]
-            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, False))
+            level = ary[1]
+            chishi = ary[luna_month - 1 + 2]
+            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, level))
 
     # Set 時系星
     with my_open(os.path.join("positions", "jikeisei.txt")) as f:
         for line in f:
             ary = line.rstrip().split(",")
             name = ary[0]
-            chishi = ary[chishi2num[hour_chishi] + 1]
-            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, False))
+            level = ary[1]
+            chishi = ary[chishi2num[hour_chishi] + 2]
+            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, level))
 
     # Set 火星
     with my_open(os.path.join("positions", "kasei.txt")) as f:
         line = f.read().splitlines()[chishi2num[year_chishi]]
         chishi = line.split(",")[chishi2num[hour_chishi]]
-        miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi("火星", False))
+        miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi("火星", 0))
 
     # Set 鈴星
     with my_open(os.path.join("positions", "reisei.txt")) as f:
         line = f.read().splitlines()[chishi2num[year_chishi]]
         chishi = line.split(",")[chishi2num[hour_chishi]]
-        miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi("鈴星", False))
+        miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi("鈴星", 0))
 
     # Set 年干系星
     with my_open(os.path.join("positions", "nenkankeisei.txt")) as f:
         for line in f:
             ary = line.rstrip().split(",")
             name = ary[0]
-            chishi = ary[tenkan2num[year_tenkan] + 1]
-            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, False))
+            level = ary[1]
+            chishi = ary[tenkan2num[year_tenkan] + 2]
+            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, level))
 
     # Set 年支系星
     with my_open(os.path.join("positions", "nenshikeisei.txt")) as f:
         for line in f:
             ary = line.rstrip().split(",")
             name = ary[0]
-            chishi = ary[chishi2num[year_chishi] + 1]
-            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, False))
+            level = ary[1]
+            chishi = ary[chishi2num[year_chishi] + 2]
+            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, level))
+
+    # Set 天才星
+    miyas[chishi2num[year_chishi]].hoshi_list.append(Hoshi("天才", -1))
+
+    # Set 天寿星
+    for i, miya in enumerate(miyas):
+        if miyas[i].is_shinkyu:
+            idx = (i + chishi2num[year_chishi]) % len(miyas)
+            miyas[idx].hoshi_list.append(Hoshi("天寿", -1))
+            break
 
     def search(miya, target_name):
         for i, hoshi in enumerate(miya.hoshi_list):
             if hoshi.name == target_name:
                 return i
         return -1
+
+    # Set 日系星
+    with my_open(os.path.join("positions", "nikkeisei.txt")) as f:
+        for line in f:
+            ary = line.rstrip().split(",")
+            name = ary[0]
+            level = ary[1]
+            hoshi = ary[2]
+            sign = int(ary[3])
+            bias = int(ary[4])
+            for i, miya in enumerate(miyas):
+                idx = search(miya, hoshi)
+                if idx != -1:
+                    idx = (i + sign * (luna_day - 1 + bias)) % len(miyas)
+                    if idx < 0:
+                        idx += len(miyas)
+                    miyas[idx].hoshi_list.append(Hoshi(name, level))
+                    break
+            assert idx != -1
+
+    # Setf 天殤星 and 天使星
+    miyas[5].hoshi_list.append(Hoshi("天殤", -1))  # 奴僕宮
+    miyas[7].hoshi_list.append(Hoshi("天使", -1))  # 疾厄宮
 
     # Set 生年四化
     shikasei_names = []
@@ -479,11 +516,14 @@ def main():
         prev_is_shusei = None
         if miyas[i].hoshi_list:
             for hoshi in miyas[i].hoshi_list:
+                if hoshi.level < args.level:
+                    continue
+                is_shusei = hoshi.level == 1
                 if prev_is_shusei is None:
                     print("　", end="")
-                elif prev_is_shusei != hoshi.is_shusei:
+                elif prev_is_shusei != is_shusei:
                     print("\n　", end="")
-                prev_is_shusei = hoshi.is_shusei
+                prev_is_shusei = is_shusei
 
                 print(hoshi.name, end="")
                 for shikasei in hoshi.shikasei_list:
