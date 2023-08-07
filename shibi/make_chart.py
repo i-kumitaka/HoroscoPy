@@ -119,6 +119,7 @@ def main():
         is_male = False
     else:
         raise ValueError("Unknown gender")
+    is_female = not is_male
 
     # Take into account 地方時差
     if args.place is None:
@@ -300,6 +301,10 @@ def main():
     year_chishi = year_rokuju_kanshi[1]
     print("・干支：" + year_rokuju_kanshi)
 
+    is_yokan = tenkan2num[year_tenkan] % 2 == 0
+    is_inkan = not is_yokan
+    clockwise = (is_yokan and is_male) or (is_inkan and is_female)
+
     with my_open("nenkan2torakan.txt") as f:
         tenkan_at_tora = f.read().splitlines()[tenkan2num[year_tenkan]]
 
@@ -426,9 +431,59 @@ def main():
                     break
             assert idx != -1
 
-    # Setf 天殤星 and 天使星
-    miyas[5].hoshi_list.append(Hoshi("天殤", -1))  # 奴僕宮
+    # Set 天傷星 and 天使星
+    miyas[5].hoshi_list.append(Hoshi("天傷", -1))  # 奴僕宮
     miyas[7].hoshi_list.append(Hoshi("天使", -1))  # 疾厄宮
+
+    # Set 長生十二星
+    with my_open("gogyo2choseishi.txt") as f:
+        chishi_at_chosei = f.read().splitlines()[gogyo2num[gogyo]]
+    with my_open(os.path.join("positions", "chosei.txt")) as f:
+        for line in f:
+            ary = line.rstrip().split(",")
+            name = ary[0]
+            level = ary[1]
+            step = int(ary[2])
+            sign = 1 if clockwise else -1
+            chishi = add_chishi(chishi_at_chosei, sign * step)
+            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, level))
+
+    # Set 博士十二星
+    with my_open(os.path.join("positions", "hakushi.txt")) as f:
+        for line in f:
+            ary = line.rstrip().split(",")
+            name = ary[0]
+            level = ary[1]
+            hoshi = ary[2]
+            step = int(ary[3])
+            sign = 1 if clockwise else -1
+            for i, miya in enumerate(miyas):
+                idx = search(miya, hoshi)
+                if idx != -1:
+                    idx = (i + sign * step) % len(miyas)
+                    if idx < 0:
+                        idx += len(miyas)
+                    miyas[idx].hoshi_list.append(Hoshi(name, level))
+                    break
+            assert idx != -1
+
+    # Set 将前十二星
+    with my_open(os.path.join("positions", "shozen.txt")) as f:
+        for line in f:
+            ary = line.rstrip().split(",")
+            name = ary[0]
+            level = ary[1]
+            chishi = ary[chishi2num[year_chishi] + 2]
+            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, level))
+
+    # Set 歳前十二星
+    with my_open(os.path.join("positions", "saizen.txt")) as f:
+        for line in f:
+            ary = line.rstrip().split(",")
+            name = ary[0]
+            level = ary[1]
+            chishi = ary[chishi2num[year_chishi] + 2]
+            miyas[chishi2miya[chishi]].hoshi_list.append(Hoshi(name, level))
 
     # Set 生年四化
     shikasei_names = []
@@ -477,10 +532,8 @@ def main():
     # Compute 大限
     _, _, suuji2num = get_basic("suuji")
     bias = suuji2num[gogyokyoku[1]]
-    is_yokan = tenkan2num[year_tenkan] % 2 == 0
-    is_inkan = not is_yokan
     for i in range(len(miyas)):
-        if i != 0 and ((is_yokan and not is_male) or (is_inkan and is_male)):
+        if i != 0 and not clockwise:
             idx = len(miyas) - i
         else:
             idx = i
@@ -514,6 +567,7 @@ def main():
         print()
 
         prev_is_shusei = None
+        zatsuyo = False
         if miyas[i].hoshi_list:
             for hoshi in miyas[i].hoshi_list:
                 if hoshi.level < args.level:
@@ -523,6 +577,9 @@ def main():
                     print("　", end="")
                 elif prev_is_shusei != is_shusei:
                     print("\n　", end="")
+                elif hoshi.level <= -2 and not zatsuyo:
+                    print("\n　", end="")
+                    zatsuyo = True
                 prev_is_shusei = is_shusei
 
                 print(hoshi.name, end="")
