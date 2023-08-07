@@ -75,9 +75,15 @@ def main():
     parser.add_argument(
         "--date", required=True, type=str, help="Date, e.g., 2000.01.01"
     )
-    parser.add_argument("--time", required=True, type=str, help="Time, e.g., 21:00")
-    parser.add_argument("--gender", required=True, type=str, help="Gender, M or F")
-    parser.add_argument("--place", default=None, type=str, help="Place")
+    parser.add_argument(
+        "--time", required=True, type=str, help="Time, e.g., 21:00 or 21"
+    )
+    parser.add_argument(
+        "--gender", required=True, type=str, help="Gender, M(ale) or F(emale)"
+    )
+    parser.add_argument(
+        "--place", default=None, type=str, help="Place or east longitude"
+    )
     parser.add_argument(
         "--eot",
         choices=["zero", "smart", "cie", "table"],
