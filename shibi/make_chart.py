@@ -167,7 +167,7 @@ def main():
 
             # https://www.astrogreg.com/snippets/equationoftime-simple.html
             J1 = calc_jd(sol_year, sol_month, sol_day)
-            J2 = calc_jd(2000, 1, 1)
+            J2 = calc_jd(1900, 1, 1)
             T1 = (J1 - J2) / 36525
             T2 = T1 * T1
             T3 = T2 * T1
