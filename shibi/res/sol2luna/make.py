@@ -31,10 +31,10 @@ def main():
     assert sum(num_sol_days.values()) == 365
 
     with open(os.path.join("res", "lunar_calender.txt")) as f_in:
-        # 1955/01/01 on lunar calender
-        sol_year = 1955
-        sol_month = 1
-        sol_day = 24
+        # 1926/01/01 on lunar calender
+        sol_year = 1926
+        sol_month = 2
+        sol_day = 13
 
         first = True
         extend = False
@@ -53,7 +53,7 @@ def main():
                 d = luna_day
 
                 if not first:
-                    f_out.write("%+d,%02d,%02d\n" % (y, m, d))
+                    f_out.write("%+d,%02d,%02d\r\n" % (y, m, d))
 
                 sol_day += 1
                 if num_sol_days[sol_month] < sol_day:
