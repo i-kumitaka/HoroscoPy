@@ -219,7 +219,7 @@ def main():
 
     # This is the next day
     if date.hour == 23:
-        date += datetime.timedelta(day=1)
+        date += datetime.timedelta(days=1)
 
     # Convert 新暦 to 旧暦
     sol_year, sol_month, sol_day = date.year, date.month, date.day
