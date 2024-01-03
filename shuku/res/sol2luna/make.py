@@ -52,11 +52,11 @@ def main():
             )
 
     with open(os.path.join("res", "lunar_calender.txt")) as f_in:
-        # 1955/01/01 on lunar calender
-        sol_year = 1955
-        sol_month = 1
-        sol_day = 24
-        dow = 1  # Monday
+        # 1926/01/01 on lunar calender
+        sol_year = 1926
+        sol_month = 2
+        sol_day = 13
+        dow = 6  # Saturday
 
         first = True
         extend = False
@@ -94,7 +94,7 @@ def main():
 
                 if not first:
                     f_out.write(
-                        "%+d,%02d,%02d,%s,%1d,%1d\n"
+                        "%+d,%02d,%02d,%s,%1d,%1d\r\n"
                         % (y, m, d, is_sanshu, is_ryohan, s)
                     )
 
